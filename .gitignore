@@ -52,3 +52,5 @@ Thumbs.db
 ios/Pods
 ios/Podfile.lock
 Plugin.xcworkspace
+/android/.gradle/
+local.properties

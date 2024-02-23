@@ -1,3 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mapbox.navigation.capacitor.plugin">
+          package="com.capacitor.mapbox.navigation.plugin">
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <activity
+            android:name="com.capacitor.mapbox.navigation.plugin.NavigationActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.capacitor.mapbox.navigation.plugin.NavigationViewActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+    </application>
+
 </manifest>
