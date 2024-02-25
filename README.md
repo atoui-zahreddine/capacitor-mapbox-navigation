@@ -1,3 +1,7 @@
+### Notice: 
+This is a fork from the original plugin [capacitor-mapbox-navigation](https://github.com/visio-soft/capacitor-mapbox) to fix some issues and add some features. The original plugin was not maintained and had some issues.
+feel free to use this plugin and contribute to it.
+
 # capacitor-mapbox-navigation
 
 Capacitor plugin to implement Turn-by-Turn Mapbox navigation.
@@ -113,7 +117,10 @@ If you plan to display the user's location on the map or get the user's location
 * [`echo(...)`](#echo)
 * [`show(...)`](#show)
 * [`history()`](#history)
+* [`requestPermissions()`](#requestpermissions)
+* [`checkPermissions()`](#checkpermissions)
 * [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -161,16 +168,38 @@ history() => Promise<any>
 --------------------
 
 
+### requestPermissions()
+
+```typescript
+requestPermissions() => Promise<PermissionStatus>
+```
+
+**Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
+
+--------------------
+
+
+### checkPermissions()
+
+```typescript
+checkPermissions() => Promise<PermissionStatus>
+```
+
+**Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
 #### MapboxResult
 
-| Prop         | Type                |
-| ------------ | ------------------- |
-| **`status`** | <code>string</code> |
-| **`type`**   | <code>string</code> |
-| **`data`**   | <code>string</code> |
+| Prop         | Type                                                     |
+| ------------ | -------------------------------------------------------- |
+| **`status`** | <code>'success' \| 'failure'</code>                      |
+| **`type`**   | <code>'on_failure' \| 'on_cancelled' \| 'on_stop'</code> |
+| **`data`**   | <code>string</code>                                      |
 
 
 #### MapboxNavOptions
@@ -187,5 +216,20 @@ history() => Promise<any>
 | --------------- | ------------------- |
 | **`latitude`**  | <code>number</code> |
 | **`longitude`** | <code>number</code> |
+
+
+#### PermissionStatus
+
+| Prop           | Type                                                        |
+| -------------- | ----------------------------------------------------------- |
+| **`location`** | <code><a href="#permissionstate">PermissionState</a></code> |
+
+
+### Type Aliases
+
+
+#### PermissionState
+
+<code>'prompt' | 'prompt-with-rationale' | 'granted' | 'denied'</code>
 
 </docgen-api>
