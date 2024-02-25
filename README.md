@@ -1,18 +1,30 @@
 # capacitor-mapbox-navigation
 
-This is a plugin for mapbox navigation tested with capacitor 3.
-
-Android implementation has not been done yet, Only ios version has been developed.
-
+Capacitor plugin to implement Turn-by-Turn Mapbox navigation.
 ## RoadMap
 
 * Bridge event binding.
-* Android Implementation
 
-## Install
+## Installation Requirements
 
-First you will need to generate token over [Mapbox](https://docs.mapbox.com/help/getting-started/access-tokens/).
+Before installing the SDK, you will need to gather the appropriate credentials. The SDK requires two pieces of sensitive information from your Mapbox account. If you don't have a Mapbox account: [sign up](https://account.mapbox.com/auth/signup/) and navigate to your [Account page](https://account.mapbox.com/). You'll need:
 
+- **A public access token**: From your account's [tokens page](https://account.mapbox.com/access-tokens/), you can either copy your _default public token_ or click the **Create a token** button to create a new public token.
+- **A secret access token with the `Downloads:Read` scope**.
+
+1. From your account's [tokens page](https://account.mapbox.com/access-tokens/), click the **Create a token** button.
+1. From the token creation page, give your token a name and make sure the box next to the `Downloads:Read` scope is checked.
+1. Click the **Create token** button at the bottom of the page to create your token.
+1. The token you've created is a _secret token_, which means you will only have one opportunity to copy it somewhere secure.
+
+## Install 
+
+```bash
+npm install capacitor-mapbox-navigation
+npx cap sync
+```
+
+## IOS instructions
 **Configure your secret token.**
 
 Your secret token enables you to download the SDK directly from Mapbox. To use your secret token, you will need to store it in a .netrc file in your home directory (not your project folder). This approach helps avoid accidentally exposing your secret token by keeping it out of your application's source code. Depending on your environment, you may have this file already, so check first before creating a new one.
@@ -30,12 +42,9 @@ To configure your public access token, open your project's **Info.plist** file a
 
 
 
-```bash
-npm install capacitor-mapbox-navigation
-npx cap sync
-```
 
-## Permission
+
+#### Permission
 
 In order for the SDK to track the user’s location as they move along the route, set **NSLocationWhenInUseUsageDescription** to:
 
@@ -43,6 +52,60 @@ Shows your location on the map and helps improve the map.
 
 Users expect the SDK to continue to track the user’s location and deliver audible instructions even while a different application is visible or the device is locked. Go to the Signing & Capabilities tab. Under the Background Modes section, enable “**Audio, AirPlay, and Picture in Picture**” and “**Location updates**”. (Alternatively, add the audio and location values to the **UIBackgroundModes** array in the Info tab.)
 
+---
+
+### Android Specific Instructions
+
+Place your secret token in your android app's top level `gradle.properties` file:
+
+```
+MAPBOX_DOWNLOADS_TOKEN=SECRET_TOKEN_HERE
+```
+
+Open up your _project-level_ `build.gradle` file. Declare the Mapbox Downloads API's `releases/maven` endpoint in the `repositories` block.
+
+```gradle
+allprojects {
+    repositories {
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/releases/maven'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                // Do not change the username below.
+                // This should always be `mapbox` (not your username).
+                username = "mapbox"
+                // Use the secret token you stored in gradle.properties as the password
+                password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
+            }
+        }
+    }
+}
+```
+
+Place your public token in values/strings.xml `android/app/src/main/res/values/strings.xml`
+
+```xml
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="mapbox_access_token"><PUT_YOUR_ACCESS_TOKEN_HERE></string>
+</resources>
+```
+
+For more information you can read the [docs provided by Mapbox](https://docs.mapbox.com/android/navigation/overview/#configure-credentials).
+
+#### Permission
+If you plan to display the user's location on the map or get the user's location information you will need to add the ACCESS_COARSE_LOCATION permission in your application's AndroidManifest.xml. You also need to add ACCESS_FINE_LOCATION permissions if you need access to precise location.
+```xml
+<manifest ... >
+  <!-- Always include this permission -->
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+  <!-- Include only if your app benefits from precise location access. -->
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+</manifest>
+
+```
 ## API
 
 <docgen-index>
