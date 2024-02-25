@@ -26,16 +26,16 @@ func getNowString() -> String {
 }
 @objc(CapacitorMapboxNavigationPlugin)
 public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControllerDelegate {
-   
+
     @objc override public func load() {
         // Called when the plugin is first constructed in the bridge
         locationHistory = NSMutableArray();
         NotificationCenter.default.addObserver(self, selector: #selector(progressDidChange(notification:)), name: .routeControllerProgressDidChange, object: nil)
     }
-    
+
     @objc func progressDidChange(notification: NSNotification) {
         let dateString = getNowString();
-        
+
         let location = notification.userInfo![RouteController.NotificationUserInfoKey.locationKey] as! CLLocation
         lastLocation?.latitude = location.coordinate.latitude;
         lastLocation?.longitude = location.coordinate.longitude;
@@ -43,34 +43,34 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
         locationHistory?.add(Location(longitude: location.coordinate.longitude, latitude: location.coordinate.latitude, when: dateString));
         emitLocationUpdatedEvent();
     }
-    
+
     func emitLocationUpdatedEvent() {
         let jsonEncoder = JSONEncoder()
         do {
             let swiftArray = locationHistory as AnyObject as! [Location]
             let locationHistoryJsonData = try jsonEncoder.encode(swiftArray)
             let locationHistoryJson = String(data: locationHistoryJsonData, encoding: String.Encoding.utf8) ?? ""
-            
+
             let lastLocationJsonData = try jsonEncoder.encode(lastLocation)
             let lastLocationJson = String(data: lastLocationJsonData, encoding: String.Encoding.utf8) ?? ""
-            
+
             bridge?.triggerWindowJSEvent(eventName: "location_updated", data: String(format: "{lastLocation: %@, locationHistory:  %@}", lastLocationJson, locationHistoryJson))
-            
+
         } catch {
             print("Error: Json Parsing Error");
         }
     }
-    
+
     @objc func history(_ call: CAPPluginCall) {
         let jsonEncoder = JSONEncoder()
         do {
             let lastLocationJsonData = try jsonEncoder.encode(lastLocation)
             let lastLocationJson = String(data: lastLocationJsonData, encoding: String.Encoding.utf8)
-            
+
             let swiftArray = locationHistory as AnyObject as! [Location]
             let locationHistoryJsonData = try jsonEncoder.encode(swiftArray)
             let locationHistoryJson = String(data: locationHistoryJsonData, encoding: String.Encoding.utf8)
-            
+
             call.resolve([
                 "lastLocation": lastLocationJson ?? "",
                 "locationHistory": locationHistoryJson ?? ""
@@ -79,23 +79,23 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
             call.reject("Error: Json Encoding Error")
         }
     }
-    
+
     @objc func show (_ call: CAPPluginCall) {
         lastLocation = Location(longitude: 0.0, latitude: 0.0);
         locationHistory?.removeAllObjects()
 
         routes = call.getArray("routes", NSDictionary.self) ?? [NSDictionary]()
         var waypoints = [Waypoint]();
-        
+
         for route in routes {
                  print(route["latitude"] as! CLLocationDegrees)
-                        waypoints.append(Waypoint(coordinate: CLLocationCoordinate2DMake(route["latitude"] as! CLLocationDegrees, route["longtitude"] as! CLLocationDegrees)))
+                        waypoints.append(Waypoint(coordinate: CLLocationCoordinate2DMake(route["latitude"] as! CLLocationDegrees, route["longitude"] as! CLLocationDegrees)))
                 }
-        
+
         let isSimulate = call.getBool("simulating") ?? false
 
         let routeOptions = NavigationRouteOptions(waypoints: waypoints, profileIdentifier: .automobile)
-        
+
         // Request a route using MapboxDirections.swift
         Directions.shared.calculate(routeOptions) { [weak self] (session, result) in
             switch result {
@@ -105,10 +105,10 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
                     guard let route = response.routes?.first, let strongSelf = self else {
                         return
                     }
-                    
+
                     let navigationService = MapboxNavigationService(routeResponse: response, routeIndex: 0, routeOptions: routeOptions, simulating: isSimulate ? .always : .never)
                     let navigationOptions = NavigationOptions(navigationService: navigationService)
-                    
+
                     let viewController = NavigationViewController(for: response, routeIndex: 0, routeOptions: routeOptions, navigationOptions: navigationOptions)
                     viewController.modalPresentationStyle = .fullScreen
                     viewController.waypointStyle = .extrudedBuilding;
@@ -119,12 +119,12 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
                     }
             }
         }
-        
+
         call.resolve()
     }
-    
+
     public func navigationViewController(_ navigationViewController: NavigationViewController, didArriveAt waypoint: Waypoint) -> Bool {
-        
+
         let jsonEncoder = JSONEncoder()
         do {
             var minDistance: CLLocationDistance = 0;
@@ -135,7 +135,7 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
                 let coord2 = CLLocation(latitude: waypoint.coordinate.latitude, longitude: waypoint.coordinate.longitude)
 
                 let distance = coord1.distance(from: coord2)
-                
+
                 if (i == 0 || distance < minDistance) {
                     minDistance = distance;
                     locationId = route["_id"] as! String;
@@ -151,7 +151,7 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
         }
         return true
     }
-    
+
     public func navigationViewControllerDidDismiss(_ navigationViewController: NavigationViewController, byCanceling canceled: Bool) {
         self.bridge?.triggerWindowJSEvent(eventName: "navigation_closed");
         navigationViewController.dismiss(animated: true);
