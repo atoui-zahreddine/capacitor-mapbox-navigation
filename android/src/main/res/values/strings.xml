@@ -2,5 +2,4 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="noTokenDialogTitle" translatable="false">Error: no mapbox access token</string>
     <string name="noTokenDialogBody" translatable="false">Please put your mapbox access token to res/values/mapbox_access_token.xml</string>
-    <string name="mapbox_access_token" translatable="false" tools:ignore="UnusedResources">pk.eyJ1IjoiYnVtYmFsIiwiYSI6ImNsczh6enRyZjAxdnQya25xOG5lNDh3Ym0ifQ.gpqPRNS53_lLbeuLUj0jPg</string>
 </resources>

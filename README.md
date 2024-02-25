@@ -75,12 +75,14 @@ echo(options: { value: string; }) => Promise<{ value: string; }>
 ### show(...)
 
 ```typescript
-show(options: MapboxNavOptions) => Promise<void>
+show(options: MapboxNavOptions) => Promise<MapboxResult | void>
 ```
 
 | Param         | Type                                                          |
 | ------------- | ------------------------------------------------------------- |
 | **`options`** | <code><a href="#mapboxnavoptions">MapboxNavOptions</a></code> |
+
+**Returns:** <code>Promise&lt;void | <a href="#mapboxresult">MapboxResult</a>&gt;</code>
 
 --------------------
 
@@ -97,6 +99,15 @@ history() => Promise<any>
 
 
 ### Interfaces
+
+
+#### MapboxResult
+
+| Prop         | Type                |
+| ------------ | ------------------- |
+| **`status`** | <code>string</code> |
+| **`type`**   | <code>string</code> |
+| **`data`**   | <code>string</code> |
 
 
 #### MapboxNavOptions

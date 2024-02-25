@@ -1,45 +1,43 @@
 package com.capacitor.mapbox.navigation.plugin
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.location.Location
-import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.capacitor.mapbox.navigation.plugin.databinding.MapboxActivityNavigationViewBinding
-import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.directions.v5.models.Bearing
-import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.bindgen.Expected
 import com.mapbox.geojson.Point
 import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapboxMap
-import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.animation.camera
+import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.navigation.base.ExperimentalPreviewMapboxNavigationAPI
 import com.mapbox.navigation.base.TimeFormat
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
 import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
+import com.mapbox.navigation.base.formatter.DistanceFormatterOptions
 import com.mapbox.navigation.base.options.NavigationOptions
 import com.mapbox.navigation.base.route.NavigationRoute
 import com.mapbox.navigation.base.route.NavigationRouterCallback
-import com.mapbox.navigation.base.route.RouterCallback
 import com.mapbox.navigation.base.route.RouterFailure
 import com.mapbox.navigation.base.route.RouterOrigin
-import com.mapbox.navigation.base.trip.model.RouteLegProgress
-import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.core.MapboxNavigation
-import com.mapbox.navigation.core.MapboxNavigationProvider
-import com.mapbox.navigation.core.arrival.ArrivalObserver
 import com.mapbox.navigation.core.directions.session.RoutesObserver
 import com.mapbox.navigation.core.formatter.MapboxDistanceFormatter
 import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
+import com.mapbox.navigation.core.lifecycle.MapboxNavigationObserver
+import com.mapbox.navigation.core.lifecycle.requireMapboxNavigation
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.replay.route.ReplayProgressObserver
@@ -51,6 +49,7 @@ import com.mapbox.navigation.core.trip.session.VoiceInstructionsObserver
 import com.mapbox.navigation.ui.base.util.MapboxNavigationConsumer
 import com.mapbox.navigation.ui.maneuver.api.MapboxManeuverApi
 import com.mapbox.navigation.ui.maneuver.view.MapboxManeuverView
+import com.mapbox.navigation.ui.maps.NavigationStyles
 import com.mapbox.navigation.ui.maps.camera.NavigationCamera
 import com.mapbox.navigation.ui.maps.camera.data.MapboxNavigationViewportDataSource
 import com.mapbox.navigation.ui.maps.camera.lifecycle.NavigationBasicGesturesHandler
@@ -137,12 +136,6 @@ class NavigationActivity : AppCompatActivity() {
      * This includes transitions from route overview to route following and continuously updating the camera as the location changes.
      */
     private lateinit var navigationCamera: NavigationCamera
-
-    /**
-     * Mapbox Navigation entry point. There should only be one instance of this object for the app.
-     * You can use [MapboxNavigationProvider] to help create and obtain that instance.
-     */
-    private lateinit var mapboxNavigation: MapboxNavigation
 
     /**
      * Produces the camera frames based on the location and routing data for the [navigationCamera] to execute.
@@ -412,39 +405,44 @@ class NavigationActivity : AppCompatActivity() {
         }
     }
 
+    private val mapboxNavigation: MapboxNavigation by requireMapboxNavigation(
+            onResumedObserver = object : MapboxNavigationObserver {
+                @SuppressLint("MissingPermission")
+                override fun onAttached(mapboxNavigation: MapboxNavigation) {
+                    mapboxNavigation.registerRoutesObserver(routesObserver)
+                    mapboxNavigation.registerLocationObserver(locationObserver)
+                    mapboxNavigation.registerRouteProgressObserver(routeProgressObserver)
+//                  todo: simulate route
+//                  mapboxNavigation.registerRouteProgressObserver(replayProgressObserver)
+                    mapboxNavigation.registerVoiceInstructionsObserver(voiceInstructionsObserver)
+                    // start the trip session to being receiving location updates in free drive
+                    // and later when a route is set also receiving route progress updates
+                    mapboxNavigation.startTripSession()
+                }
 
+                override fun onDetached(mapboxNavigation: MapboxNavigation) {
+                    mapboxNavigation.unregisterRoutesObserver(routesObserver)
+                    mapboxNavigation.unregisterLocationObserver(locationObserver)
+                    mapboxNavigation.unregisterRouteProgressObserver(routeProgressObserver)
+//                    todo: simulate route
+//                    mapboxNavigation.unregisterRouteProgressObserver(replayProgressObserver)
+                    mapboxNavigation.unregisterVoiceInstructionsObserver(voiceInstructionsObserver)
+                }
+            },
+            onInitialize = this::initNavigation
+    )
 
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = MapboxActivityNavigationViewBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        val shouldSimulateRoute = false
 
-        // initialize Mapbox Navigation
-        mapboxNavigation = if (MapboxNavigationProvider.isCreated()) {
-            MapboxNavigationProvider.retrieve()
-        } else if (shouldSimulateRoute) {
-            MapboxNavigationProvider.create(
-                    NavigationOptions.Builder(this)
-                            .accessToken(getString(R.string.mapbox_access_token))
-                            .locationEngine(replayLocationEngine)
-                            .build()
-            )
-        } else {
-            MapboxNavigationProvider.create(
-                    NavigationOptions.Builder(this)
-                            .accessToken(getString(R.string.mapbox_access_token))
-                            .build()
-            )
-        }
-        
-        mapboxMap = binding.mapView.getMapboxMap()
         // initialize Navigation Camera
-        viewportDataSource = MapboxNavigationViewportDataSource(mapboxMap)
-
+        viewportDataSource = MapboxNavigationViewportDataSource(binding.mapView.getMapboxMap())
         navigationCamera = NavigationCamera(
-                mapboxMap,
+                binding.mapView.getMapboxMap(),
                 binding.mapView.camera,
                 viewportDataSource
         )
@@ -476,7 +474,7 @@ class NavigationActivity : AppCompatActivity() {
         }
 
         // make sure to use the same DistanceFormatterOptions across different features
-        val distanceFormatterOptions = mapboxNavigation.navigationOptions.distanceFormatterOptions
+        val distanceFormatterOptions = DistanceFormatterOptions.Builder(this).build()
 
         // initialize maneuver api that feeds the data to the top banner maneuver view
         maneuverApi = MapboxManeuverApi(
@@ -504,12 +502,12 @@ class NavigationActivity : AppCompatActivity() {
         // initialize voice instructions api and the voice instruction player
         speechApi = MapboxSpeechApi(
                 this,
-                getString(R.string.mapbox_access_token),
+                getString(com.getcapacitor.android.R.string.mapbox_access_token),
                 Locale.US.language
         )
         voiceInstructionsPlayer = MapboxVoiceInstructionsPlayer(
                 this,
-                getString(R.string.mapbox_access_token),
+                getString(com.getcapacitor.android.R.string.mapbox_access_token),
                 Locale.US.language
         )
 
@@ -518,7 +516,7 @@ class NavigationActivity : AppCompatActivity() {
         // the value of this option will depend on the style that you are using
         // and under which layer the route line should be placed on the map layers stack
         val mapboxRouteLineOptions = MapboxRouteLineOptions.Builder(this)
-                .withRouteLineBelowLayerId("road-label")
+                .withRouteLineBelowLayerId("road-label-navigation")
                 .build()
         routeLineApi = MapboxRouteLineApi(mapboxRouteLineOptions)
         routeLineView = MapboxRouteLineView(mapboxRouteLineOptions)
@@ -527,16 +525,17 @@ class NavigationActivity : AppCompatActivity() {
         val routeArrowOptions = RouteArrowOptions.Builder(this).build()
         routeArrowView = MapboxRouteArrowView(routeArrowOptions)
 
-
         // load map style
-        mapboxMap.loadStyleUri(
-                Style.MAPBOX_STREETS
-        )
+        binding.mapView.getMapboxMap().loadStyleUri(NavigationStyles.NAVIGATION_DAY_STYLE) {
+            // add long click listener that search for a route to the clicked destination
+//            binding.mapView.gestures.addOnMapLongClickListener { point ->
+//            }
+        }
 
         // initialize view interactions
         binding.stop.setOnClickListener {
-//            clearRouteAndStopNavigation() // TODO: figure out how we want to address this since a user cannot reinitialize a route once it is canceled.
-            }
+            sendDataToCapacitor("success","on_stop","Navigation finished")
+        }
         binding.recenter.setOnClickListener {
             navigationCamera.requestNavigationCameraToFollowing()
             binding.routeOverview.showTextAndExtend(BUTTON_ANIMATION_DURATION)
@@ -552,87 +551,12 @@ class NavigationActivity : AppCompatActivity() {
 
         // set initial sounds button state
         binding.soundButton.unmute()
-
-        // start the trip session to being receiving location updates in free drive
-        // and later when a route is set also receiving route progress updates
-        mapboxNavigation.startTripSession()
-
-        startRoute()
-
     }
 
-    @SuppressLint("MissingPermission")
-    private fun startRoute() {
-
-
-        if (intent != null && intent.hasExtra("fromLat") && intent.hasExtra("fromLng") &&
-                intent.hasExtra("toLat") && intent.hasExtra("toLng")) {
-
-            val fromLat = intent.getDoubleExtra("fromLat", 0.0)
-            val fromLng = intent.getDoubleExtra("fromLng", 0.0)
-            val toLat = intent.getDoubleExtra("toLat", 0.0)
-            val toLng = intent.getDoubleExtra("toLng", 0.0)
-
-            val fromPoint = Point.fromLngLat(fromLng, fromLat)
-            val toPoint = Point.fromLngLat(toLng, toLat)
-
-
-
-            setCameraPositionToOrigin(fromPoint)
-            // Call a function to find route using fromPoint and toPoint
-            this.findRoute(fromPoint,toPoint)
-        }
-    }
-    private fun findRoute(origin: Point, destination: Point) {
-        try {
-            mapboxNavigation.requestRoutes(
-                    RouteOptions.builder()
-                            .applyDefaultNavigationOptions()
-                            .applyLanguageAndVoiceUnitOptions(this)
-                            .coordinatesList(listOf(origin, destination))
-                            .profile(DirectionsCriteria.PROFILE_DRIVING)
-                            .steps(true)
-                            .build(),
-                    object : RouterCallback {
-                        override fun onRoutesReady(
-                                routes: List<DirectionsRoute>,
-                                routerOrigin: RouterOrigin
-                        ) {
-                            setRouteAndStartNavigation(routes)
-                        }
-
-                        override fun onFailure(
-                                reasons: List<RouterFailure>,
-                                routeOptions: RouteOptions
-                        ) {
-                            println("tttttttttttttttt")
-                        }
-
-                        override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
-                            // no impl
-                        }
-                    }
-            )
-        } catch (ex: Exception) {
-            println(ex)
-        }
-
-    }
-    private fun setCameraPositionToOrigin(origin:Point) {
-        val startingLocation = Location(LocationManager.GPS_PROVIDER)
-        startingLocation.latitude = origin.latitude()
-        startingLocation.longitude = origin.longitude()
-        viewportDataSource.onLocationChanged(startingLocation)
-
-        navigationCamera.requestNavigationCameraToFollowing(
-                stateTransitionOptions = NavigationCameraTransitionOptions.Builder()
-                        .maxDuration(0) // instant transition
-                        .build()
-        )
-    }
     override fun onDestroy() {
         super.onDestroy()
-        mapboxReplayer.finish()
+
+        mapboxReplayer.stop()
         maneuverApi.cancel()
         routeLineApi.cancel()
         routeLineView.cancel()
@@ -640,35 +564,99 @@ class NavigationActivity : AppCompatActivity() {
         voiceInstructionsPlayer.shutdown()
     }
 
+    private fun initNavigation() {
+        MapboxNavigationApp.setup(
+                NavigationOptions.Builder(this)
+                        .accessToken(getString(com.getcapacitor.android.R.string.mapbox_access_token))
+                        .build()
+        )
 
-    private fun setRouteAndStartNavigation(routes: List<DirectionsRoute>) {
+        // initialize location puck
+        binding.mapView.location.apply {
+            setLocationProvider(navigationLocationProvider)
+            this.locationPuck = LocationPuck2D(
+                    bearingImage = ContextCompat.getDrawable(
+                            this@NavigationActivity,
+                            com.mapbox.navigation.R.drawable.mapbox_navigation_puck_icon
+                    )
+            )
+            enabled = true
+        }
+        val origin  = Point.fromLngLat(
+                intent.getDoubleExtra("fromLng", 0.0),
+                intent.getDoubleExtra("fromLat", 0.0)
+        )
+        val destination = Point.fromLngLat(
+                intent.getDoubleExtra("toLng", 0.0),
+                intent.getDoubleExtra("toLat", 0.0)
+        )
+        findRoute(
+                origin,
+                destination
+        )
+    }
+
+    private fun findRoute(origin: Point,destination: Point) {
+
+        // execute a route request
+        // it's recommended to use the
+        // applyDefaultNavigationOptions and applyLanguageAndVoiceUnitOptions
+        // that make sure the route request is optimized
+        // to allow for support of all of the Navigation SDK features
+        mapboxNavigation.requestRoutes(
+                RouteOptions.builder()
+                        .applyDefaultNavigationOptions()
+                        .applyLanguageAndVoiceUnitOptions(this)
+                        .coordinatesList(listOf(origin, destination))
+                        .layersList(listOf(mapboxNavigation.getZLevel(), null))
+                        .build(),
+                object : NavigationRouterCallback {
+                    override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
+                        Log.e("Mapbox Navigation", "onCanceled")
+                        sendDataToCapacitor("failure","on_cancelled","Route Navigation cancelled")
+                    }
+
+                    override fun onFailure(reasons: List<RouterFailure>, routeOptions: RouteOptions) {
+                        Log.e("Mapbox Navigation", "onFailure: $reasons")
+                        sendDataToCapacitor("failure","on_failure","No routes found")
+                    }
+
+                    override fun onRoutesReady(
+                            routes: List<NavigationRoute>,
+                            routerOrigin: RouterOrigin
+                    ) {
+                        setRouteAndStartNavigation(routes)
+                    }
+                }
+        )
+    }
+
+    private fun setRouteAndStartNavigation(routes: List<NavigationRoute>) {
         // set routes, where the first route in the list is the primary route that
         // will be used for active guidance
-        // set routes, where the first route in the list is the primary route that
-        // will be used for active guidance
-        mapboxNavigation.setRoutes(routes)
-
+        mapboxNavigation.setNavigationRoutes(routes)
 
         // show UI elements
         binding.soundButton.visibility = View.VISIBLE
         binding.routeOverview.visibility = View.VISIBLE
         binding.tripProgressCard.visibility = View.VISIBLE
 
+        isVoiceInstructionsMuted=!isVoiceInstructionsMuted
+
         // move the camera to overview when new route is available
         navigationCamera.requestNavigationCameraToFollowing()
     }
 
-    private fun clearRouteAndStopNavigation() {
-        // clear
-        mapboxNavigation.setNavigationRoutes(listOf())
+    private fun sendDataToCapacitor(status:String,type : String,content: String ){
+        val intent = Intent()
+        val data = Bundle()
 
-        // stop simulation
-        mapboxReplayer.stop()
+        data.putString("status",status)
+        data.putString("type",type)
+        data.putString("data",content)
 
-        // hide UI elements
-        binding.soundButton.visibility = View.INVISIBLE
-        binding.maneuverView.visibility = View.INVISIBLE
-        binding.routeOverview.visibility = View.INVISIBLE
-        binding.tripProgressCard.visibility = View.INVISIBLE
+        intent.putExtras(data)
+        setResult(RESULT_OK,intent)
+        finish()
     }
 }
