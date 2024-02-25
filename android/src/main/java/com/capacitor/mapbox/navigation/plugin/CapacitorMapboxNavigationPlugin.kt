@@ -2,16 +2,24 @@ package com.capacitor.mapbox.navigation.plugin
 
 import android.content.Intent
 import androidx.activity.result.ActivityResult
-import com.getcapacitor.JSObject
-import com.getcapacitor.Plugin
-import com.getcapacitor.PluginCall
-import com.getcapacitor.PluginMethod
+import com.getcapacitor.*
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.mapbox.maps.extension.style.expressions.dsl.generated.switchCase
+import com.getcapacitor.annotation.Permission
+import com.getcapacitor.annotation.PermissionCallback
 
 
-@CapacitorPlugin(name = "CapacitorMapboxNavigation")
+@CapacitorPlugin(
+    name = "CapacitorMapboxNavigation",
+    permissions = [
+        Permission(
+            alias = "location",
+            strings = arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+    )]
+)
 class CapacitorMapboxNavigationPlugin : Plugin() {
     private val implementation = CapacitorMapboxNavigation()
 
@@ -26,7 +34,14 @@ class CapacitorMapboxNavigationPlugin : Plugin() {
 
     @PluginMethod
     fun show(call: PluginCall){
+        if(getPermissionState("location") != PermissionState.GRANTED){
+            requestPermissionForAlias( "location",call, "permissionCallback")
+        } else {
+            startNavigation(call)
+        }
+    }
 
+    fun startNavigation(call: PluginCall) {
         val routesArray = call.getArray("routes")
 
         if (routesArray != null && routesArray.length() == 2) {
@@ -74,5 +89,13 @@ class CapacitorMapboxNavigationPlugin : Plugin() {
         data.put("data",resultData)
 
         call.resolve(data)
+    }
+    @PermissionCallback
+    private fun permissionCallback(call: PluginCall) {
+        if (getPermissionState("location") == PermissionState.GRANTED) {
+            startNavigation(call);
+        } else {
+            call.reject("Permission is required to take a picture");
+        }
     }
 }
