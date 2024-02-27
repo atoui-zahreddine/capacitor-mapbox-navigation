@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.capacitor.mapbox.navigation.plugin.databinding.MapboxActivityNavigationViewBinding
-import com.mapbox.api.directions.v5.models.Bearing
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.bindgen.Expected
 import com.mapbox.geojson.Point
@@ -20,9 +19,7 @@ import com.mapbox.maps.EdgeInsets
 import com.mapbox.maps.MapboxMap
 import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.animation.camera
-import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.location
-import com.mapbox.navigation.base.ExperimentalPreviewMapboxNavigationAPI
 import com.mapbox.navigation.base.TimeFormat
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
 import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
@@ -41,7 +38,6 @@ import com.mapbox.navigation.core.lifecycle.requireMapboxNavigation
 import com.mapbox.navigation.core.replay.MapboxReplayer
 import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.replay.route.ReplayProgressObserver
-import com.mapbox.navigation.core.replay.route.ReplayRouteMapper
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
@@ -63,11 +59,7 @@ import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineApi
 import com.mapbox.navigation.ui.maps.route.line.api.MapboxRouteLineView
 import com.mapbox.navigation.ui.maps.route.line.model.MapboxRouteLineOptions
 import com.mapbox.navigation.ui.tripprogress.api.MapboxTripProgressApi
-import com.mapbox.navigation.ui.tripprogress.model.DistanceRemainingFormatter
-import com.mapbox.navigation.ui.tripprogress.model.EstimatedTimeToArrivalFormatter
-import com.mapbox.navigation.ui.tripprogress.model.PercentDistanceTraveledFormatter
-import com.mapbox.navigation.ui.tripprogress.model.TimeRemainingFormatter
-import com.mapbox.navigation.ui.tripprogress.model.TripProgressUpdateFormatter
+import com.mapbox.navigation.ui.tripprogress.model.*
 import com.mapbox.navigation.ui.tripprogress.view.MapboxTripProgressView
 import com.mapbox.navigation.ui.voice.api.MapboxSpeechApi
 import com.mapbox.navigation.ui.voice.api.MapboxVoiceInstructionsPlayer
@@ -75,8 +67,7 @@ import com.mapbox.navigation.ui.voice.model.SpeechAnnouncement
 import com.mapbox.navigation.ui.voice.model.SpeechError
 import com.mapbox.navigation.ui.voice.model.SpeechValue
 import com.mapbox.navigation.ui.voice.model.SpeechVolume
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 /**
  * This example demonstrates a basic turn-by-turn navigation experience by putting together some UI elements to showcase
@@ -502,13 +493,21 @@ class NavigationActivity : AppCompatActivity() {
         // initialize voice instructions api and the voice instruction player
         speechApi = MapboxSpeechApi(
                 this,
-                getString(com.getcapacitor.android.R.string.mapbox_access_token),
-                Locale.US.language
+                getString(baseContext.resources.getIdentifier(
+                        "mapbox_access_token",
+                        "string",
+                        baseContext.packageName
+                )),
+                Locale.getDefault().language
         )
         voiceInstructionsPlayer = MapboxVoiceInstructionsPlayer(
                 this,
-                getString(com.getcapacitor.android.R.string.mapbox_access_token),
-                Locale.US.language
+                getString(baseContext.resources.getIdentifier(
+                        "mapbox_access_token",
+                        "string",
+                        baseContext.packageName
+                )),
+                Locale.getDefault().language
         )
 
         // initialize route line, the withRouteLineBelowLayerId is specified to place
@@ -567,7 +566,11 @@ class NavigationActivity : AppCompatActivity() {
     private fun initNavigation() {
         MapboxNavigationApp.setup(
                 NavigationOptions.Builder(this)
-                        .accessToken(getString(com.getcapacitor.android.R.string.mapbox_access_token))
+                        .accessToken(getString(baseContext.resources.getIdentifier(
+                                "mapbox_access_token",
+                                "string",
+                                baseContext.packageName
+                        )))
                         .build()
         )
 
