@@ -7,4 +7,6 @@ CAP_PLUGIN(CapacitorMapboxNavigationPlugin, "CapacitorMapboxNavigation",
            CAP_PLUGIN_METHOD(echo, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(show, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(history, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(requestPermissions, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(checkPermissions, CAPPluginReturnPromise);
 )
