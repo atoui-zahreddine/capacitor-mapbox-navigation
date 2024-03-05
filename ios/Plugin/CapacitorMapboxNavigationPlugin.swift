@@ -26,7 +26,9 @@ func getNowString() -> String {
 }
 @objc(CapacitorMapboxNavigationPlugin)
 public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControllerDelegate {
-
+    var permissionCallID: String?
+    var locationManager: CLLocationManager?
+    
     @objc override public func load() {
         // Called when the plugin is first constructed in the bridge
         locationHistory = NSMutableArray();
@@ -123,6 +125,43 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
         call.resolve()
     }
 
+    @objc public override func checkPermissions(_ call: CAPPluginCall) {
+        let locationState: String
+
+        switch CLLocationManager.authorizationStatus() {
+        case .notDetermined:
+            locationState = "prompt"
+        case .restricted, .denied:
+            locationState = "denied"
+        case .authorizedAlways, .authorizedWhenInUse:
+            locationState = "granted"
+        @unknown default:
+            locationState = "prompt"
+        }
+
+        call.resolve(["location": locationState])
+    }
+
+    @objc public override func requestPermissions(_ call: CAPPluginCall) {
+        if let manager = locationManager, CLLocationManager.locationServicesEnabled() {
+            if CLLocationManager.authorizationStatus() == .notDetermined {
+                bridge?.saveCall(call)
+                permissionCallID = call.callbackId
+                manager.requestWhenInUseAuthorization()
+            } else {
+                checkPermissions(call)
+            }
+        } else {
+            call.reject("Location services are disabled")
+        }
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        if let callID = permissionCallID, let call = bridge?.savedCall(withID: callID) {
+            checkPermissions(call)
+            bridge?.releaseCall(call)
+        }
+    }
     public func navigationViewController(_ navigationViewController: NavigationViewController, didArriveAt waypoint: Waypoint) -> Bool {
 
         let jsonEncoder = JSONEncoder()
