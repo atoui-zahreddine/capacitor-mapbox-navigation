@@ -25,10 +25,15 @@ func getNowString() -> String {
     return formatter.string(from: date);
 }
 @objc(CapacitorMapboxNavigationPlugin)
-public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControllerDelegate {
+public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControllerDelegate,CLLocationManagerDelegate { 
     var permissionCallID: String?
-    var locationManager: CLLocationManager?
-    
+    var callbackId: String?
+    var locationManager = CLLocationManager()
+    enum CallType {
+        case permissions
+    }
+    private var callQueue: [String: CallType] = [:]
+
     @objc override public func load() {
         // Called when the plugin is first constructed in the bridge
         locationHistory = NSMutableArray();
@@ -83,6 +88,8 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
     }
 
     @objc func show (_ call: CAPPluginCall) {
+        bridge?.saveCall(call)
+        callbackId = call.callbackId
         lastLocation = Location(longitude: 0.0, latitude: 0.0);
         locationHistory?.removeAllObjects()
 
@@ -103,6 +110,7 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
             switch result {
                 case .failure(let error):
                     print(error.localizedDescription)
+                self?.sendDataToCapacitor(status: "failure", type: "on_failure",content: "no routes found")
                 case .success(let response):
                     guard let route = response.routes?.first, let strongSelf = self else {
                         return
@@ -122,46 +130,85 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
             }
         }
 
-        call.resolve()
+
     }
+    public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        let removalQueue = callQueue.filter { $0.value == .permissions }
 
-    @objc public override func checkPermissions(_ call: CAPPluginCall) {
-        let locationState: String
-
-        switch CLLocationManager.authorizationStatus() {
-        case .notDetermined:
-            locationState = "prompt"
-        case .restricted, .denied:
-            locationState = "denied"
-        case .authorizedAlways, .authorizedWhenInUse:
-            locationState = "granted"
-        @unknown default:
-            locationState = "prompt"
+        for (id, _) in removalQueue {
+            if let call = bridge?.savedCall(withID: id) {
+                call.reject(error.localizedDescription)
+                bridge?.releaseCall(call)
+            }
         }
 
-        call.resolve(["location": locationState])
+        for (id, _) in callQueue {
+            if let call = bridge?.savedCall(withID: id) {
+                call.reject(error.localizedDescription)
+            }
+        }
     }
 
-    @objc public override func requestPermissions(_ call: CAPPluginCall) {
-        if let manager = locationManager, CLLocationManager.locationServicesEnabled() {
+
+    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        let removalQueue = callQueue.filter { $0.value == .permissions }
+        callQueue = callQueue.filter { $0.value != .permissions }
+
+        for (id, _) in removalQueue {
+            if let call = bridge?.savedCall(withID: id) {
+                checkPermissions(call)
+                bridge?.releaseCall(call)
+            }
+        }
+    }
+    
+    @objc override public func checkPermissions(_ call: CAPPluginCall) {
+        var status: String = ""
+
+        if CLLocationManager.locationServicesEnabled() {
+            switch CLLocationManager.authorizationStatus() {
+            case .notDetermined:
+                status = "prompt"
+            case .restricted, .denied:
+                status = "denied"
+            case .authorizedAlways, .authorizedWhenInUse:
+                status = "granted"
+            @unknown default:
+                status = "prompt"
+            }
+        } else {
+            call.reject("Location services are not enabled")
+            return
+        }
+
+        let result = [
+            "location": status,
+            "coarseLocation": status
+        ]
+
+        call.resolve(result)
+    }
+
+    @objc override public func requestPermissions(_ call: CAPPluginCall) {
+        if CLLocationManager.locationServicesEnabled() {
+            // If state is not yet determined, request perms.
+            // Otherwise, report back the state right away
             if CLLocationManager.authorizationStatus() == .notDetermined {
                 bridge?.saveCall(call)
-                permissionCallID = call.callbackId
-                manager.requestWhenInUseAuthorization()
+                callQueue[call.callbackId] = .permissions
+
+                DispatchQueue.main.async {
+                    self.locationManager.delegate = self
+                    self.locationManager.requestWhenInUseAuthorization()
+                }
             } else {
                 checkPermissions(call)
             }
         } else {
-            call.reject("Location services are disabled")
+            call.reject("Location services are not enabled")
         }
     }
 
-    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if let callID = permissionCallID, let call = bridge?.savedCall(withID: callID) {
-            checkPermissions(call)
-            bridge?.releaseCall(call)
-        }
-    }
     public func navigationViewController(_ navigationViewController: NavigationViewController, didArriveAt waypoint: Waypoint) -> Bool {
 
         let jsonEncoder = JSONEncoder()
@@ -184,16 +231,26 @@ public class CapacitorMapboxNavigationPlugin: CAPPlugin, NavigationViewControlle
             let locationJsonData = try jsonEncoder.encode(loc)
             let locationJson = String(data: locationJsonData, encoding: String.Encoding.utf8) ?? ""
 
-            self.bridge?.triggerWindowJSEvent(eventName: "arrived", data: locationJson);
+            sendDataToCapacitor(status: "success", type: "on_arrive", content: locationJson)
         } catch {
-            self.bridge?.triggerWindowJSEvent(eventName: "arrived");
+            sendDataToCapacitor(status: "failure", type: "on_error", content: "Error: Json Encoding Error")
         }
         return true
     }
 
     public func navigationViewControllerDidDismiss(_ navigationViewController: NavigationViewController, byCanceling canceled: Bool) {
-        self.bridge?.triggerWindowJSEvent(eventName: "navigation_closed");
+        sendDataToCapacitor(status: "success", type: "on_stop", content: "Navigation stoped")
         navigationViewController.dismiss(animated: true);
+    }
+
+    @objc public func sendDataToCapacitor(status: String, type: String, content: String) {
+        if let callID = callbackId, let call = bridge?.savedCall(withID: callID) {
+
+            let data = ["status": status, "type": type, "content": content]
+            call.resolve(data)
+            bridge?.releaseCall(call)
+        }
+
     }
 }
 

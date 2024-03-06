@@ -2,7 +2,7 @@ import type { PermissionState } from '@capacitor/core';
 
 export interface CapacitorMapboxNavigationPlugin {
   echo(options: { value: string }): Promise<{ value: string }>;
-  show(options: MapboxNavOptions): Promise<MapboxResult | void>;
+  show(options: MapboxNavOptions): Promise<MapboxResult>;
   history(): Promise<any>;
   requestPermissions(): Promise<PermissionStatus>;
   checkPermissions(): Promise<PermissionStatus>;

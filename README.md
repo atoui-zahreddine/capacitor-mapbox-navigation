@@ -145,14 +145,14 @@ echo(options: { value: string; }) => Promise<{ value: string; }>
 ### show(...)
 
 ```typescript
-show(options: MapboxNavOptions) => Promise<MapboxResult | void>
+show(options: MapboxNavOptions) => Promise<MapboxResult>
 ```
 
 | Param         | Type                                                          |
 | ------------- | ------------------------------------------------------------- |
 | **`options`** | <code><a href="#mapboxnavoptions">MapboxNavOptions</a></code> |
 
-**Returns:** <code>Promise&lt;void | <a href="#mapboxresult">MapboxResult</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#mapboxresult">MapboxResult</a>&gt;</code>
 
 --------------------
 

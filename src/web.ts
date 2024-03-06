@@ -2,7 +2,7 @@ import { WebPlugin } from '@capacitor/core';
 
 import type {
   CapacitorMapboxNavigationPlugin,
-  MapboxNavOptions,
+  MapboxNavOptions, MapboxResult,
 } from './definitions';
 
 export class CapacitorMapboxNavigationWeb
@@ -10,23 +10,23 @@ export class CapacitorMapboxNavigationWeb
   implements CapacitorMapboxNavigationPlugin
 {
   async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log('ECHO', options);
     return options;
   }
 
-  async show(options: MapboxNavOptions): Promise<void> {
-    console.log('show', options);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async show(_options: MapboxNavOptions): Promise<MapboxResult> {
+    throw { status: 'failure', type: 'not_supported', data: 'navigation not supported on web' };
   }
 
   async history(): Promise<any> {
-    console.log('history');
+    throw { status: 'failure', type: 'not_supported', data: 'navigation not supported on web' };
   }
 
   async requestPermissions(): Promise<any> {
-    console.log('requestPermissions');
+    throw { status: 'failure', type: 'not_supported', data: 'navigation not supported on web' };
   }
 
   async checkPermissions(): Promise<any> {
-    console.log('checkPermissions');
+    throw { status: 'failure', type: 'not_supported', data: 'navigation not supported on web' };
   }
 }
