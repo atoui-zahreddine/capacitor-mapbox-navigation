@@ -1,0 +1,10 @@
+{
+  "appId": "com.example.app",
+  "appName": "capacitor-mapbox-navigation-demo",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

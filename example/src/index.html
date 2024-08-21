@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Awesome Capacitor App</title>
+    <meta name="viewport" content="initial-scale=1, width=device-width, height=device-height, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <script
+      type="module"
+      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.js"
+    ></script>
+
+    <link rel="icon" type="image/x-icon" href="./assets/icon/favicon.ico" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <meta name="theme-color" content="#31d53d" />
+  </head>
+  <body>
+  <div>
+    <label for="longitude"> Longitude :</label>
+    <input id="longitude" type="text" placeholder="Provide a valid longitude" value="5.058957"/>
+  </div>
+  <div>
+    <label for="latitude"> Latitude : </label>
+    <input id="latitude" type="text" placeholder="Provide a valid latitude" value="51.560996" />
+  </div>
+    <button id="navigate-btn">Navigate</button>
+    <script src="./js/capacitor-welcome.js" type="module"></script>
+  </body>
+</html>
