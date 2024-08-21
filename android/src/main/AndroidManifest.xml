@@ -5,7 +5,9 @@
     <application>
         <activity
             android:name="com.capacitor.mapbox.navigation.plugin.NavigationActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenSize"
+            android:theme="@style/AppTheme.NoActionBar"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.capacitor.mapbox.navigation.plugin.NavigationViewActivity"/>

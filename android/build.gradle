@@ -68,10 +68,17 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':capacitor-android')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "com.mapbox.navigation:android:2.18.0"
-    implementation "androidx.databinding:databinding-runtime:8.2.2"
+    implementation "androidx.databinding:databinding-runtime:8.5.2"
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.cardview:cardview:1.0.0'
+    // Mapbox Navigation SDK
+    implementation "com.mapbox.navigationcore:navigation:3.3.0"
+    implementation "com.mapbox.navigationcore:copilot:3.3.0"
+    implementation "com.mapbox.navigationcore:ui-maps:3.3.0"
+    implementation "com.mapbox.navigationcore:voice:3.3.0"
+    implementation "com.mapbox.navigationcore:android:3.3.0"
+    implementation "com.mapbox.navigationcore:ui-components:3.3.0"
+
 
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
