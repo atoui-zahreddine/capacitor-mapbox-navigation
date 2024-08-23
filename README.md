@@ -88,7 +88,7 @@ allprojects {
 }
 ```
 
-Place your public token in values/strings.xml `android/app/src/main/res/values/strings.xml`
+Place your public token in values/mapbox_access_token.xml `android/app/src/main/res/values/mapbox_access_token.xml`
 
 ```xml
 <resources xmlns:tools="http://schemas.android.com/tools">
@@ -204,10 +204,10 @@ checkPermissions() => Promise<PermissionStatus>
 
 #### MapboxNavOptions
 
-| Prop          | Type                          |
+| Prop          | Type                |
 | ------------- | ----------------------------- |
 | **`routes`**  | <code>LocationOption[]</code> |
-| **`mapType`** | <code>string</code>           |
+| **`mapType`** | <code>string</code> |
 
 
 #### LocationOption
