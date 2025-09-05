@@ -1,0 +1,6 @@
+packages:
+  - .
+  - example
+ignoredBuiltDependencies:
+  - esbuild
+  - swiftlint

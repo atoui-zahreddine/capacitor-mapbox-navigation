@@ -14,16 +14,16 @@
     "sync": "npx cap sync"
   },
   "dependencies": {
-    "@atoui-zahreddine/capacitor-mapbox-navigation": "../",
-    "@capacitor/camera": "latest",
-    "@capacitor/core": "latest",
-    "@capacitor/geolocation": "^6.0.1",
-    "@capacitor/splash-screen": "latest"
+    "@atoui-zahreddine/capacitor-mapbox-navigation": "workspace:*",
+    "@capacitor/camera": "^7.0.2",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/geolocation": "^7.1.5",
+    "@capacitor/splash-screen": "^7.0.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "latest",
+    "@capacitor/cli": "^7.0.0",
     "prettier": "^3.3.3",
-    "vite": "^2.9.13"
+    "vite": "^7.1.4"
   },
   "author": "",
   "license": "ISC"

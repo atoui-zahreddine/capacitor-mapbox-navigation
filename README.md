@@ -130,14 +130,14 @@ If you plan to display the user's location on the map or get the user's location
 ### echo(...)
 
 ```typescript
-echo(options: { value: string; }) => Promise<{ value: string; }>
+echo(options: { value: string; }) => any
 ```
 
 | Param         | Type                            |
 | ------------- | ------------------------------- |
 | **`options`** | <code>{ value: string; }</code> |
 
-**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -145,14 +145,14 @@ echo(options: { value: string; }) => Promise<{ value: string; }>
 ### show(...)
 
 ```typescript
-show(options: MapboxNavOptions) => Promise<MapboxResult>
+show(options: MapboxNavOptions) => any
 ```
 
 | Param         | Type                                                          |
 | ------------- | ------------------------------------------------------------- |
 | **`options`** | <code><a href="#mapboxnavoptions">MapboxNavOptions</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#mapboxresult">MapboxResult</a>&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -160,10 +160,10 @@ show(options: MapboxNavOptions) => Promise<MapboxResult>
 ### history()
 
 ```typescript
-history() => Promise<any>
+history() => any
 ```
 
-**Returns:** <code>Promise&lt;any&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -171,10 +171,10 @@ history() => Promise<any>
 ### requestPermissions()
 
 ```typescript
-requestPermissions() => Promise<PermissionStatus>
+requestPermissions() => any
 ```
 
-**Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -182,10 +182,10 @@ requestPermissions() => Promise<PermissionStatus>
 ### checkPermissions()
 
 ```typescript
-checkPermissions() => Promise<PermissionStatus>
+checkPermissions() => any
 ```
 
-**Returns:** <code>Promise&lt;<a href="#permissionstatus">PermissionStatus</a>&gt;</code>
+**Returns:** <code>any</code>
 
 --------------------
 
@@ -193,20 +193,11 @@ checkPermissions() => Promise<PermissionStatus>
 ### Interfaces
 
 
-#### MapboxResult
-
-| Prop         | Type                                                     |
-| ------------ | -------------------------------------------------------- |
-| **`status`** | <code>'success' \| 'failure'</code>                      |
-| **`type`**   | <code>'on_failure' \| 'on_cancelled' \| 'on_stop'</code> |
-| **`data`**   | <code>string</code>                                      |
-
-
 #### MapboxNavOptions
 
 | Prop          | Type                |
-| ------------- | ----------------------------- |
-| **`routes`**  | <code>LocationOption[]</code> |
+| ------------- | ------------------- |
+| **`routes`**  | <code>{}</code>     |
 | **`mapType`** | <code>string</code> |
 
 
@@ -216,6 +207,15 @@ checkPermissions() => Promise<PermissionStatus>
 | --------------- | ------------------- |
 | **`latitude`**  | <code>number</code> |
 | **`longitude`** | <code>number</code> |
+
+
+#### MapboxResult
+
+| Prop         | Type                                                     |
+| ------------ | -------------------------------------------------------- |
+| **`status`** | <code>'success' \| 'failure'</code>                      |
+| **`type`**   | <code>'on_failure' \| 'on_cancelled' \| 'on_stop'</code> |
+| **`data`**   | <code>string</code>                                      |
 
 
 #### PermissionStatus
